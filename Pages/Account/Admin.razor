@@ -1,0 +1,99 @@
+@page "/admin"
+@using ManageInventoryNET.Data
+@using ManageInventoryNET.Models
+
+@inject AppDbContext AppDbContext
+@inject NavigationManager NavigationManager
+
+@inject IHttpContextAccessor HttpContextAccessor
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h1 class="page-title">Admin - User Management</h1>
+@* list for managing users in the application. You can change roles and delete users. *@
+@if (users == null)
+{
+    <p><em>Loading users...</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Username</td>
+                    <td>
+                        <InputSelect @bind-Value="user.Role" class="form-select">
+                            <option value="Admin">Admin</option>
+                            <option value="User">User</option>
+                        </InputSelect>
+                    </td>
+                    <td>
+                        <button class="btn btn-success btn-sm me-2" @onclick="() => SaveUser(user)">Save</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteUser(user.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    //model for list of users
+    private List<User>? users;
+    //authentication If user is not logged or correct role it will be redirected 
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!user.Identity.IsAuthenticated || !user.IsInRole("Admin"))
+        {
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        // Load users only if authenticated
+        users = await Task.FromResult(AppDbContext.Users.ToList());
+    }
+
+    ///save user when role is changed when save button is clicked
+    private async Task SaveUser(User user)
+    {
+        Console.WriteLine($"Saving user: {user.Username} with role {user.Role}");
+        var existing = AppDbContext.Users.FirstOrDefault(u => u.Id == user.Id);
+        if (existing != null)
+        {
+            existing.Role = user.Role;
+            await AppDbContext.SaveChangesAsync();
+        }
+    }
+    //task for deleting user when admin clicks delete button
+    private async Task DeleteUser(int id)
+    {
+        Console.WriteLine($"Deleting user with ID: {id}");
+        var user = AppDbContext.Users.FirstOrDefault(u => u.Id == id);
+        if (user != null)
+        {
+            AppDbContext.Users.Remove(user);
+            await AppDbContext.SaveChangesAsync();
+
+            users = AppDbContext.Users.ToList(); // refresh list
+            StateHasChanged(); // trigger UI update
+        }
+    }
+
+}

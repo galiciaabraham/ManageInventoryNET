@@ -1,0 +1,53 @@
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+
+<div @ref="modalElement" class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="close" @onclick="CancelDelete">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this product?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                <button type="button" class="btn btn-danger" @onclick="ConfirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ElementReference modalElement;
+    
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    public virtual async Task ShowModal()
+    {
+        await JSRuntime.InvokeVoidAsync("window.blazorHelpers.showModal", modalElement);
+    }
+
+    public async Task HideModal()
+    {
+        await JSRuntime.InvokeVoidAsync("window.blazorHelpers.hideModal", modalElement);
+    }
+
+    public async Task ConfirmDelete()
+    {
+        await HideModal();
+        await OnConfirm.InvokeAsync();
+    }
+
+    private async Task CancelDelete()
+    {
+        await HideModal();
+        await OnCancel.InvokeAsync();
+    }
+}

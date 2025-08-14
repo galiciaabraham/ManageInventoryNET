@@ -1,0 +1,21 @@
+div.row
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.fw-bolder
+{
+    font-family: 'Arimo', sans-serif;
+    text-align: center;
+    margin: 3rem;
+    font-size: 2rem;
+}
+
+.card-text
+{
+    font-family: 'Lato', sans-serif;
+    text-align: center;
+    font-size: 1.5rem;
+}

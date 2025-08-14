@@ -1,0 +1,25 @@
+
+.page-title
+{
+    font-family: 'Arimo', sans-serif;
+    font-weight: bold;
+    font-size: 2rem;
+    padding: .5rem;
+}
+
+
+.table-striped
+{
+    margin: 2rem;
+}
+
+.table-striped thead
+{
+    font-family: 'Arimo', sans-serif;
+}
+
+
+.table-striped tbody
+{
+    font-family: 'Lato', sans-serif;
+}

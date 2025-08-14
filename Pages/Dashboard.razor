@@ -1,0 +1,391 @@
+@page "/dashboard"
+
+@* @using Microsoft.AspNetCore.Components.Web.Virtualization *@
+@using Microsoft.AspNetCore.Components.Web
+@using ManageInventoryNET.Shared
+@inject IJSRuntime JSRuntime
+
+@inject HttpClient HttpClient
+
+@inject NavigationManager NavigationManager
+@using Microsoft.EntityFrameworkCore;
+
+@using ManageInventoryNET.Model
+@using ManageInventoryNET.Data
+@inject ProductContext DbContext
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin,User")]
+
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">Dashboard</h1>
+    <a class="edit-button" style="text-decoration: none; color: black;" href="/add-item"
+        title="add one item to the inventory">Add Item</a>
+    @* <a class="add-item-button" href="/add-item" title="add one item to the inventory">Add Item</a> *@
+</div>
+
+<div class="filters mb-4">
+    <div class="filter-group">
+        <label>Category:
+            <select @bind="selectedCategory" class="form-control">
+                <option value="">All</option>
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat">@cat</option>
+                }
+            </select>
+        </label>
+    </div>
+    
+    <div class="filter-group">
+        <label>Price Range:
+            <input type="number" @bind="minPrice" placeholder="Min" step="0.01" class="form-control" />
+            <span>to</span>
+            <input type="number" @bind="maxPrice" placeholder="Max" step="0.01" class="form-control" />
+        </label>
+    </div>
+    
+    <div class="filter-group">
+        <label>Quantity Range:
+            <input type="number" @bind="minQuantity" placeholder="Min" class="form-control" />
+            <span>to</span>
+            <input type="number" @bind="maxQuantity" placeholder="Max" class="form-control" />
+        </label>
+    </div>
+    <div class="filter-actions">
+    <button class="btn btn-primary" @onclick="ApplyFilters">Filter</button>
+    <button class="btn btn-secondary" @onclick="ResetFilters">Reset</button>
+    </div>
+    
+    
+</div>
+
+@if (isLoading)
+{
+    <div class="loading-wrapper">
+        <h2>Hang on there...</h2>
+        <p class="loading-message">Loading your data...</p>
+    </div>
+
+}
+else if (hasError)
+{
+    <div class="error-wrapper">
+        <h2>There has been an error retreiving your inventory...</h2>
+        <p class="error-message">Please close your browser and try again or contact support.</p>
+    </div>
+}
+else
+{
+    <div class="pt-wrapper">
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Price (ea)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <div class="scroll-wrapper">
+                    <Virtualize @ref="virtualizeRef" ItemsProvider="LoadProducts" Context="product">
+
+                                @{
+                                    int quantityInt = 0;
+                                    int.TryParse(product.Quantity?.ToString(), out quantityInt);
+                                }
+                         @if (ShouldDisplayProduct(product))
+                         {
+                            <div class="product-row">
+                                <div class="product-cell" data-label="Id">@product.Id</div>
+                                <div class="product-cell" data-label="Product Name">@product.Name</div>
+                                <div class="product-cell" data-label="Category">@product.Category?.Name</div>
+                                <div class="product-cell @(quantityInt < 10 ? "low-stock" : "")" title="@(quantityInt < 10 ? "Low stock!" : "")" data-label="Quantity">
+                                    @product.Quantity
+                                    @if(quantityInt < 5)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#000000"><path d="m40-120 440-760 440 760H40Zm115.33-66.67h649.34L480-746.67l-324.67 560ZM482.78-238q14.22 0 23.72-9.62 9.5-9.61 9.5-23.83 0-14.22-9.62-23.72-9.61-9.5-23.83-9.5-14.22 0-23.72 9.62-9.5 9.62-9.5 23.83 0 14.22 9.62 23.72 9.62 9.5 23.83 9.5Zm-33.45-114H516v-216h-66.67v216ZM480-466.67Z"/></svg>
+                                    }
+                                </div>
+                                <div class="product-cell" data-label="Price">@product.Price</div>
+                                <div class="product-cell button-container" data-label="Actions"><a href="/edit-item/@product.Id" class="edit-button"><svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#000000"><path d="M186.67-120q-27 0-46.84-19.83Q120-159.67 120-186.67v-586.66q0-27 19.83-46.84Q159.67-840 186.67-840h389L509-773.33H186.67v586.66h586.66v-324.66L840-578v391.33q0 27-19.83 46.84Q800.33-120 773.33-120H186.67ZM480-480ZM360-360v-170l377-377q10-10 22.33-14.67 12.34-4.66 24.67-4.66 12.67 0 25.04 5 12.38 5 22.63 15l74 75q9.4 9.97 14.53 22.02 5.13 12.05 5.13 24.51 0 12.47-4.83 24.97-4.83 12.5-14.83 22.5L530-360H360Zm499-424.67-74.67-74.66L859-784.67Zm-432.33 358H502l246-246L710-710l-38.33-37.33-245 244.33v76.33ZM710-710l-38.33-37.33L710-710l38 37.33L710-710Z"/></svg></a><button class="delete-button" @onclick="() => ShowDeleteConfirmation(product.Id)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#000000">
+                                        <path d="M267.33-120q-27.5 0-47.08-19.58-19.58-19.59-19.58-47.09V-740H160v-66.67h192V-840h256v33.33h192V-740h-40.67v553.33q0 27-19.83 46.84Q719.67-120 692.67-120H267.33Zm425.34-620H267.33v553.33h425.34V-740Zm-328 469.33h66.66v-386h-66.66v386Zm164 0h66.66v-386h-66.66v386ZM267.33-740v553.33V-740Z"/>
+                                    </svg>
+                                </button>
+                                </div>
+                            </div>
+                        }
+                     
+                        @* <div class="product-row">
+                            <div class="product-cell" data-label="Id">@product.Id</div>
+                            <div class="product-cell" data-label="Product Name">@product.Name</div>
+                            <div class="product-cell" data-label="Category">@product.Category</div>
+                            <div class="product-cell @(quantityInt < 10 ? "low-stock" : "")"
+                                title="@(quantityInt < 10 ? "Low stock!" : "")" data-label="Quantity">
+                                @product.Quantity
+                                @if (quantityInt < 5)
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px"
+                                        fill="#000000">
+                                        <path
+                                            d="m40-120 440-760 440 760H40Zm115.33-66.67h649.34L480-746.67l-324.67 560ZM482.78-238q14.22 0 23.72-9.62 9.5-9.61 9.5-23.83 0-14.22-9.62-23.72-9.61-9.5-23.83-9.5-14.22 0-23.72 9.62-9.5 9.62-9.5 23.83 0 14.22 9.62 23.72 9.62 9.5 23.83 9.5Zm-33.45-114H516v-216h-66.67v216ZM480-466.67Z" />
+                                    </svg>
+                                }
+                            </div>
+                            <div class="product-cell" data-label="Price">@product.Price</div>
+                            <div class="product-cell button-container" data-label="Actions"><button class="edit-button"><svg
+                                        xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960"
+                                        width="40px" fill="#000000">
+                                        <path
+                                            d="M186.67-120q-27 0-46.84-19.83Q120-159.67 120-186.67v-586.66q0-27 19.83-46.84Q159.67-840 186.67-840h389L509-773.33H186.67v586.66h586.66v-324.66L840-578v391.33q0 27-19.83 46.84Q800.33-120 773.33-120H186.67ZM480-480ZM360-360v-170l377-377q10-10 22.33-14.67 12.34-4.66 24.67-4.66 12.67 0 25.04 5 12.38 5 22.63 15l74 75q9.4 9.97 14.53 22.02 5.13 12.05 5.13 24.51 0 12.47-4.83 24.97-4.83 12.5-14.83 22.5L530-360H360Zm499-424.67-74.67-74.66L859-784.67Zm-432.33 358H502l246-246L710-710l-38.33-37.33-245 244.33v76.33ZM710-710l-38.33-37.33L710-710l38 37.33L710-710Z" />
+                                    </svg></button><button class="delete-button" @onclick="() => DeleteItem(product.Id!)"><svg
+                                        xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960"
+                                        width="40px" fill="#000000">
+                                        <path
+                                            d="M267.33-120q-27.5 0-47.08-19.58-19.58-19.59-19.58-47.09V-740H160v-66.67h192V-840h256v33.33h192V-740h-40.67v553.33q0 27-19.83 46.84Q719.67-120 692.67-120H267.33Zm425.34-620H267.33v553.33h425.34V-740Zm-328 469.33h66.66v-386h-66.66v386Zm164 0h66.66v-386h-66.66v386ZM267.33-740v553.33V-740Z" />
+                                    </svg></button>
+                            <div class="product-cell button-container" data-label="Actions"><a href="/edit-item/@product.Id" class="edit-button"><svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#000000"><path d="M186.67-120q-27 0-46.84-19.83Q120-159.67 120-186.67v-586.66q0-27 19.83-46.84Q159.67-840 186.67-840h389L509-773.33H186.67v586.66h586.66v-324.66L840-578v391.33q0 27-19.83 46.84Q800.33-120 773.33-120H186.67ZM480-480ZM360-360v-170l377-377q10-10 22.33-14.67 12.34-4.66 24.67-4.66 12.67 0 25.04 5 12.38 5 22.63 15l74 75q9.4 9.97 14.53 22.02 5.13 12.05 5.13 24.51 0 12.47-4.83 24.97-4.83 12.5-14.83 22.5L530-360H360Zm499-424.67-74.67-74.66L859-784.67Zm-432.33 358H502l246-246L710-710l-38.33-37.33-245 244.33v76.33ZM710-710l-38.33-37.33L710-710l38 37.33L710-710Z"/></svg></a><button class="delete-button" @onclick="()=>DeleteItem(product.Id!)"><svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#000000"><path d="M267.33-120q-27.5 0-47.08-19.58-19.58-19.59-19.58-47.09V-740H160v-66.67h192V-840h256v33.33h192V-740h-40.67v553.33q0 27-19.83 46.84Q719.67-120 692.67-120H267.33Zm425.34-620H267.33v553.33h425.34V-740Zm-328 469.33h66.66v-386h-66.66v386Zm164 0h66.66v-386h-66.66v386ZM267.33-740v553.33V-740Z"/></svg></button>
+                            </div>
+                        </div>*@
+                    </Virtualize>
+                </div>
+                
+            </tbody>
+        </table>
+    </div>
+
+<DeleteConfirmationDialog @ref="deleteDialog" 
+                         OnConfirm="ConfirmDelete" 
+                         OnCancel="() => productIdToDelete = null" />
+@code {
+    bool isLoading = false;
+    bool hasError = false;
+    
+    [Parameter]
+    public Virtualize<ManageInventoryNET.Model.Product>? virtualizeRef {get; set;}
+
+    // Filter variables
+    private List<string> categories = new();
+    private string selectedCategory = string.Empty;
+    private decimal? minPrice;
+    private decimal? maxPrice;
+    private int? minQuantity;
+    private int? maxQuantity;
+    private bool filtersApplied = false; 
+
+    private DeleteConfirmationDialog? deleteDialog;
+    private int? productIdToDelete;
+
+    public async Task ShowDeleteConfirmation(int id)
+    {
+        productIdToDelete = id;
+        if (deleteDialog != null)
+        {
+            await deleteDialog.ShowModal();
+        }
+    }
+
+    public async Task ConfirmDelete()
+    {
+        if (productIdToDelete.HasValue)
+        {
+            await DeleteItem(productIdToDelete.Value);
+            productIdToDelete = null;
+        }
+    }
+ protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender && virtualizeRef != null)
+    {
+        await virtualizeRef.RefreshDataAsync();
+    }
+}
+
+
+
+
+    // function to load categories and initialize component
+    protected override async Task OnInitializedAsync()
+{
+    // 🔐 Check if the user is authenticated
+    var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+    var user = authState.User;
+
+    
+
+    if (user.Identity == null || !user.Identity.IsAuthenticated)
+    {
+        NavigationManager.NavigateTo("/login", forceLoad: true);
+        return;
+    }
+
+
+
+    // 📦 Load product categories
+    try
+    {
+        var products = await HttpClient.GetFromJsonAsync<List<ManageInventoryNET.Model.Product>>(
+            $"{NavigationManager.BaseUri}products"
+        );
+
+        categories = await DbContext.Categories
+            .OrderBy(c => c.Name)
+            .Select(c => c.Name!)
+            .ToListAsync();
+        // categories = products?.Select(p => p.Category).Distinct().ToList() ?? new List<string>(); 
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error loading categories: {ex.Message}");
+    }
+
+    // 🚀 Ensure products load right after categories
+    if (virtualizeRef != null)
+    {
+        await virtualizeRef.RefreshDataAsync();
+    }
+}
+
+
+
+
+    // The LoadProducts function will return a paginated version of all the products to ensure a good performance. 
+    private async ValueTask<ItemsProviderResult<ManageInventoryNET.Model.Product>> LoadProducts(ItemsProviderRequest
+    request)
+    {
+        isLoading = true;
+        try
+        {
+            
+            var url = $"{NavigationManager.BaseUri}products/paged?startIndex={request.StartIndex}&count={request.Count}";
+            var pagedResult = await HttpClient.GetFromJsonAsync<PagedResult<Product>>(url);
+            isLoading = false;
+            return new ItemsProviderResult<ManageInventoryNET.Model.Product>(
+            pagedResult?.Items ?? new List<ManageInventoryNET.Model.Product>(), pagedResult?.TotalCount ?? 0
+            );
+        }
+        catch (Exception error)
+        {
+            Console.WriteLine(error);
+            hasError = true;
+            isLoading = false;
+            return new ItemsProviderResult<Product>(Array.Empty<Product>(), 0);
+        }
+    }
+
+    // Function to determine if a product should be displayed based on current filters
+    private bool ShouldDisplayProduct(ManageInventoryNET.Model.Product product)
+    {
+        if (!filtersApplied)
+        {
+            return true;
+        }
+        // Category filter
+        if (!string.IsNullOrEmpty(selectedCategory) && 
+            !string.Equals(product.Category?.Name?.Trim(), selectedCategory.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // Price filter
+        if (decimal.TryParse(product.Price, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var price))
+        {
+            if (minPrice.HasValue && price < minPrice.Value) return false;
+            if (maxPrice.HasValue && price > maxPrice.Value) return false;
+        }
+        else
+        {
+            return false;
+        }
+
+        // Quantity filter
+        if (int.TryParse(product.Quantity, out var quantity))
+        {
+            if (minQuantity.HasValue && quantity < minQuantity.Value) return false;
+            if (maxQuantity.HasValue && quantity > maxQuantity.Value) return false;
+        }
+        else
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task ApplyFilters()
+    {
+        filtersApplied = true;
+        if (virtualizeRef != null)
+        {
+            await virtualizeRef.RefreshDataAsync();
+        }
+    }
+
+    private async Task ResetFilters()
+    {
+        selectedCategory = string.Empty;
+        minPrice = null;
+        maxPrice = null;
+        minQuantity = null;
+        maxQuantity = null;
+        filtersApplied = false;
+        
+        if (virtualizeRef != null)
+        {
+            await virtualizeRef.RefreshDataAsync();
+        }
+    }
+
+    public class PagedResult<T>
+    {
+        public List<T> Items { get; set; } = new();
+        public int TotalCount { get; set; }
+    }
+
+    // Legacy function that returned a simple list of all items on database 
+
+    // protected override async Task OnInitializedAsync()
+    //{
+    //    products = await HttpClient.GetFromJsonAsync<List<ManageInventoryNET.Model.Product>>(NavigationManager.BaseUri + "products") ?? new();
+    //}
+
+    private async Task DeleteItem(int id)
+    {
+        var item = await DbContext.Products.FindAsync(id);
+        
+        if (item != null)
+        {
+            DbContext.Products.Remove(item);
+            await DbContext.SaveChangesAsync();
+
+            if (deleteDialog != null)
+            {
+                await deleteDialog.HideModal();
+            }
+
+            if (virtualizeRef != null)
+            {
+                await virtualizeRef.RefreshDataAsync();
+            }
+        }
+    }
+
+
+
+
+
+    }
+
+}
+

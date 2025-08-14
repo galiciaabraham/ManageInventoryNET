@@ -1,0 +1,83 @@
+@page "/edit-item/{ProductId:int}";
+@using ManageInventoryNET.Model;
+@using ManageInventoryNET.Data;
+@using Microsoft.EntityFrameworkCore;
+@inject ProductContext DbContext;
+@inject NavigationManager NavigationManager;
+@using Microsoft.AspNetCore.Components.Web;
+
+<h1>Edit Item</h1>
+<small style="font-size: 1.2rem;">Update product details</small>
+
+<div class="d-flex justify-content-center align-items-center" style="height: 600px;">
+    <EditForm Model="@newProduct" OnValidSubmit="HandleValidSubmit" FormName="AddItem" class="p-4" style="min-width: 300px; max-width: 500px; width: 100%; background-color: #E6E6E6; border-radius: 25px; border: 2px solid black; box-shadow: 7px 5px 5px black">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Name:</label>
+            <InputText @bind-Value="newProduct.Name" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Category:</label>
+            <InputSelect @bind-Value="newProduct.CategoryId" class="form-control">
+                <option value="">--Select Category--</option>
+
+                @if(categories!= null){
+
+                    @foreach(var category in categories)
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                }
+                
+            </InputSelect>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Quantity:</label>
+            <InputText @bind-Value="newProduct.Quantity" class="form-control"/>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Price:</label>
+            <InputText @bind-Value="newProduct.Price" class="form-control"/>
+        </div>
+
+        <div class="text-center">
+            <button class="btn-template" type="submit">Update Product</button>
+        </div>
+    </EditForm>
+</div>
+
+@code{
+    [Parameter]
+    public int ProductId {get; set;}
+
+    private List<Category> categories = new();
+    
+    private Product newProduct = new Product();
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await DbContext.Categories.ToListAsync();
+
+        if(ProductId != 0)
+        {
+            newProduct = await DbContext.Products.FindAsync(ProductId) ?? new Product();
+
+            if(newProduct == null)
+            {
+                NavigationManager.NavigateTo("./dashboard");
+            }
+        }
+    }
+
+      private async Task HandleValidSubmit()
+    {
+        DbContext.Products.Update(newProduct);
+        await DbContext.SaveChangesAsync();
+
+        NavigationManager.NavigateTo("/dashboard");
+    }
+
+
+}

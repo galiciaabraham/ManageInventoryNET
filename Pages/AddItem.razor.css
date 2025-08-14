@@ -1,0 +1,51 @@
+.btn-template{
+    margin: .5rem;
+    padding: 5px;
+    text-align: center;
+    font-family: "Lato", sans-serif;
+    border-radius: 10px;
+    border: 2px solid black;
+    box-shadow: 7px 5px 5px black;
+}
+
+.btn-template:hover{
+    background-color: #595958;
+    color: white;
+  }
+
+
+.page-title
+{
+    font-family: 'Arimo', sans-serif;
+    font-weight: bold;
+    font-size: 2rem;
+    padding: .5rem;
+}
+
+.page-subtitle
+{
+    font-family: 'Arimo', sans-serif;
+    font-size: 1.5rem;
+    padding: .5rem;
+}
+
+.mb-3
+{
+    font-family: 'Lato', sans-serif;
+    font-weight: bold;
+}
+
+.form-label
+{   
+    display: block;
+    padding-top: 1rem;
+    font-family: 'Arimo', sans-serif;
+    font-size: 1rem;
+}
+
+div.mb-3 input.form-control
+{
+    font-family: 'Lato', sans-serif;
+    font-size: 1rem;
+    padding: 1rem;
+}

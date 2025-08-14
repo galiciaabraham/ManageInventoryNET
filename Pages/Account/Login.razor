@@ -1,0 +1,85 @@
+@page "/login"
+
+@using ManageInventoryNET.Models.ViewModels
+@using System.Net.Http.Json
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager NavigationManager
+
+
+<h2>Login</h2>
+@* Login form with inputs for username and password, and a submit button. *@
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger text-center">@errorMessage</div>
+}
+<form method="post" action="/api/auth/login">
+    <div class="mb-3">
+        <label for="username">Username</label>
+        <input name="username" class="form-control" autocomplete="username" />
+    </div>
+
+    <div class="mb-3">
+        <label for="password">Password</label>
+        <input name="password" type="password" class="form-control" autocomplete="current-password" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Login</button>
+    <p class="text-center mt-3">
+        Don't have an account?
+        <a href="/register">Register here</a>.
+    </p>
+
+</form>
+
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? errorMessage { get; set; }
+    //model for login form 
+    private LoginViewModel Model { get; set; } = new LoginViewModel();
+
+    //handles login 
+    //calls for API login and if user is authenticated will redirect user to home page
+    // if user not authenticated, show error message
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login")
+            {
+                Content = JsonContent.Create(Model)
+            };
+            request.Headers.Add("Accept", "application/json");
+
+            var client = HttpClientFactory.CreateClient("ApiClient");
+
+            var response = await client.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                var rawContent = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    var error = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(rawContent);
+                    errorMessage = error?["message"] ?? "Login failed.";
+                }
+                catch
+                {
+                    errorMessage = $"Login failed: {rawContent}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred: " + ex.Message;
+        }
+    }
+
+}

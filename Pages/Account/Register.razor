@@ -1,0 +1,85 @@
+@page "/register"
+@using ManageInventoryNET.Models.ViewModels
+@using ManageInventoryNET.Data
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@inject AppDbContext AppDbContext
+@inject NavigationManager NavigationManager
+@inject IHttpContextAccessor HttpContextAccessor
+<h3>Register</h3>
+<EditForm Model="@registerModel" OnValidSubmit="HandleRegister" FormName="registerForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Username</label>
+        <InputText @bind-Value="registerModel.Username" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText @bind-Value="registerModel.Password" type="password" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Confirm Password</label>
+        <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Roll</label>
+        <InputSelect @bind-Value="registerModel.Role" class="form-select">
+            <option value="">Select Roll</option>
+            <option value="Admin">Admin</option>
+            <option value="User">User</option>
+        </InputSelect>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <button type="submit" class="btn btn-primary">Register</button>
+</EditForm>
+
+
+
+@code {
+    [SupplyParameterFromForm]
+    // register Model 
+    private RegisterViewModel registerModel { get; set; } = new RegisterViewModel();
+
+    private string? errorMessage;
+    //handles registration
+    //user registration information is saved into db 
+    private async Task HandleRegister()
+    {
+        //if user exists send error message
+        var existingUser = AppDbContext.Users.FirstOrDefault(u => u.Username == registerModel.Username);
+        if (existingUser != null)
+        {
+            errorMessage = "Username already exists.";
+            return;
+        }
+
+        var user = new User
+        {
+            Username = registerModel.Username,
+            PasswordHash = HashPassword(registerModel.Password),
+            Role = registerModel.Role ?? "User"// Default to User if Role is not selected
+        };
+
+        AppDbContext.Users.Add(user);
+        await AppDbContext.SaveChangesAsync();
+
+        NavigationManager.NavigateTo("/login");
+    }
+
+    // Simple password hash using BCrypt
+    private string HashPassword(string password)
+    {
+        return BCrypt.Net.BCrypt.HashPassword(password);
+    }
+
+}

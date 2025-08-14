@@ -1,0 +1,82 @@
+@page "/add-item"
+@using ManageInventoryNET.Model
+@using ManageInventoryNET.Data
+@using Microsoft.EntityFrameworkCore;
+@namespace ManageInventoryNET.Shared
+@using Microsoft.AspNetCore.Components;
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@inject ProductContext DbContext
+@inject NavigationManager NavigationManager
+
+
+<h1 class="page-title">Add Item</h1>
+<small class="page-subtitle" style="font-size: 1.2rem;">Add items to the inventory</small>
+
+
+<div class="d-flex justify-content-center align-items-center" style="height: 600px;">
+    <EditForm Model="@newProduct" OnValidSubmit="HandleValidSubmit" FormName="AddItem" class="p-4" style="min-width: 300px; max-width: 500px; width: 100%; background-color: #E6E6E6; border-radius: 25px; border: 2px solid black; box-shadow: 7px 5px 5px black">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Name:</label>
+            <InputText id="newName" @bind-Value="newProduct.Name" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Category:</label>
+            <InputSelect id="newCategory" @bind-Value="newProduct.CategoryId" class="form-control">
+                <option value="">--Select Category--</option>
+
+                @if(categories!= null){
+
+                    @foreach(var category in categories)
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                }
+                
+            </InputSelect>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Quantity:</label>
+            <InputText id="newQuantity" @bind-Value="newProduct.Quantity" class="form-control"/>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Price:</label>
+            <InputText id="newPrice" @bind-Value="newProduct.Price" class="form-control"/>
+        </div>
+
+        <div class="text-center">
+            <button class="btn-template" type="submit">Create Product</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+
+    private List<Category>? categories = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await DbContext.Categories.ToListAsync();
+    }
+
+    private Product newProduct = new Product();
+
+    public async Task HandleValidSubmit()
+    {
+        @* newProduct.Id = Guid.NewGuid().ToString(); *@
+        DbContext.Products.Add(newProduct);
+        await DbContext.SaveChangesAsync();
+
+        newProduct = new Product();
+
+        NavigationManager.NavigateTo("/dashboard");
+    }
+
+    
+}
+

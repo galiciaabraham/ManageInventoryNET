@@ -1,0 +1,159 @@
+.navbar-toggler {
+    appearance: none;
+    cursor: pointer;
+    width: 3.5rem;
+    height: 2.5rem;
+    color: #E6E6E6;
+    position: absolute;
+    top: 0.5rem;
+    right: 1rem;
+    border: 3px solid #E6E6E6;
+    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/1.75rem #39393A;
+}
+
+
+.top-row {
+    height: 3.5rem;
+    background-color: #39393A ;
+}
+
+.navbar-brand {
+    font-family: 'Arimo', sans-serif;
+    font-size: 1.2rem;
+}
+
+.nav-item {
+    font-family: 'Arimo', sans-serif;
+    font-size: .9rem;
+    padding: 2px;
+    font-weight:400;
+}
+
+.nav-link svg
+{
+    margin: .3rem;
+}
+
+    .nav-item:first-of-type {
+        padding-top: 2rem;
+    }
+
+    .nav-item:last-of-type {
+        padding-bottom: 1rem;
+    }
+
+    .nav-item ::deep .nav-link {
+        color: #d7d7d7;
+        background: none;
+        border: none;
+        border-radius: 4px;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+        width: 100%;
+    }
+
+.nav-item ::deep a.active {
+    background-color: rgba(255,255,255,0.37);
+    color: white;
+}
+
+.nav-item ::deep .nav-link:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+}
+
+.nav-scrollable {
+    
+    display: none;
+}
+
+.flex-column
+{
+    background-color: #39393A;
+    gap: 1rem;
+}
+
+
+.navbar-toggler:checked ~ .nav-scrollable {
+    display: block;
+}
+
+.login-button-wrapper-lg
+{
+    display: none;
+}
+
+.login-button-wrapper-sm
+{
+    display: flex;
+    justify-content: right;
+    background-color: #39393A;
+}
+
+.login-button-wrapper-sm a
+{
+    padding: 1rem;
+    font-size: .9rem;
+    font-family: "Arimo", sans-serif;
+    text-decoration: none;
+    font-weight: 400;
+    color: #d7d7d7;
+}
+
+.login-button-wrapper-sm a svg
+{
+    display: block;
+}
+
+
+@media (min-width: 900px) {
+    .navbar-toggler {
+        display: none;
+    }
+
+    .nav-scrollable {
+        /* Never collapse the sidebar for wide screens */
+        display: block;
+        position: relative;
+        background-color: #39393A;
+        
+        /* Allow sidebar to scroll for tall menus */
+        height: calc(100vh - 3.5rem);
+        overflow-y: auto;
+    }
+
+    .login-button-wrapper-lg
+    {
+        display: block;
+        position: absolute;
+        top: 80%;
+        right: 25%;
+    }
+
+    .login-button-wrapper-lg a
+    {
+        display: block;
+        margin: auto;
+        text-align: center;
+        padding: 2rem;
+        font-size: 1rem;
+        font-family: "Arimo", sans-serif;
+        text-decoration: none;
+        font-weight: bold;
+        color: #d7d7d7;
+    }
+
+    .login-button-wrapper-lg a svg
+    {
+        display: block;
+        margin: auto;
+    }
+
+    .login-button-wrapper-sm
+    {
+        display: none;
+    }
+
+}

@@ -1,0 +1,10 @@
+@page "/logout"
+@inject NavigationManager NavigationManager
+
+@code {
+    // This component is used to handle logout by redirecting to the logout path
+    protected override void OnInitialized()
+    {
+        NavigationManager.NavigateTo("/logout", forceLoad: true);
+    }
+}

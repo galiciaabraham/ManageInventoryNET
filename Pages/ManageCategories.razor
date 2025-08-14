@@ -1,0 +1,110 @@
+@page "/manage-categories"
+@using ManageInventoryNET.Model
+@using ManageInventoryNET.Data
+@inject ProductContext Db   
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.EntityFrameworkCore
+
+
+
+<div class="pt-wrapper d-flex flex-column pt-3 pb-3" style="min-height: 70vh; max-height: 90vh; overflow-y: auto;">
+   
+    <div class="align-items-start mb-5" style="text-align: left;">
+        <h1 class="page-title">Manage Categories</h1>
+        <small class="page-subtitle">Create or delete categories</small>
+    </div>
+    
+    <div class="d-flex align-items-center flex-column mt-3">
+        <EditForm Model="newCategory" OnValidSubmit="HandleValidSubmit" class="p-4" style="min-width: 300px; max-width: 500px; width: 100%; background-color: #E6E6E6; border-radius: 25px; border: 2px solid black; box-shadow: 7px 5px 5px black">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label for="categoryName" class="form-label">Category Name</label>
+                <InputText id="categoryName" class="form-control" @bind-Value="newCategory.Name" />
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn-template">Add Category</button>
+            </div>
+        </EditForm>
+    
+    
+        <div class="p-4 mt-4" style="min-width: 300px; max-width: 500px; width: 100%; background-color: #E6E6E6; border-radius: 25px; border: 2px solid black; box-shadow: 7px 5px 5px black">
+            <table class="product-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Category Name</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @if (categories == null || !categories.Any())
+                            {
+                                <tr>
+                                    <td colspan="3" class="text-center">No categories yet. Add a new category</td>
+                                </tr>
+
+                            }
+                            else
+                            {
+                                @foreach (var category in categories)
+                                {
+                                    <tr>
+                                        <td>@category.Id</td>
+                                        <td>@category.Name</td>
+                                        <td class="button-container">
+                                            <button class="delete-button" @onclick="() => DeleteCategory(category.Id)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#000000">
+                                                    <path d="M267.33-120q-27.5 0-47.08-19.58-19.58-19.59-19.58-47.09V-740H160v-66.67h192V-840h256v33.33h192V-740h-40.67v553.33q0 27-19.83 46.84Q719.67-120 692.67-120H267.33Zm425.34-620H267.33v553.33h425.34V-740Zm-328 469.33h66.66v-386h-66.66v386Zm164 0h66.66v-386h-66.66v386ZM267.33-740v553.33V-740Z"/>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+            </table>
+        </div>
+    </div>
+   
+</div>
+
+
+@code{
+    private List<Category>? categories;
+
+    private Category newCategory = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await Db.Categories.ToListAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        Db.Categories.Add(newCategory);
+        await Db.SaveChangesAsync();
+
+        categories = await Db.Categories.ToListAsync();
+        
+        newCategory = new();
+
+        
+    }
+
+    private async Task DeleteCategory(int id)
+    {
+        var category = await Db.Categories.FindAsync(id);
+        if (category is not null)
+        {
+            Db.Categories.Remove(category);
+            await Db.SaveChangesAsync();
+
+            categories = await Db.Categories.ToListAsync();
+          
+        }
+    }
+}
